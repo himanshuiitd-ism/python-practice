@@ -3,6 +3,7 @@ import time
 import glob
 from emailing import send_email
 import os
+from threading import Thread
 
 video = cv2.VideoCapture(0) #0 for main camera and 1 if using a secondary camera like usb or phone camera connected with laptop
 
@@ -65,9 +66,13 @@ while True:
   status_list = status_list[-2:]
 
   if status_list[0] == 1 and status_list[1] == 0:
-    send_email(image_with_obj)
-    clean_folder()
-  
+    email_thread = Thread(target=send_email, args=(image_with_obj, ))
+    email_thread.daemon = True
+    clean_thread = Thread(target=clean_folder)
+    email_thread.daemon = True
+
+    email_thread.start()
+
   cv2.imshow("Video", frame)
 
   key = cv2.waitKey(1) #0 waits infinitely(freezes the vdo), 1 means 1ms wait for key press dring capturing each frame.
@@ -75,6 +80,6 @@ while True:
     break
 
 video.release()
-
+clean_thread.start()
 
 # Training is a method which is used when we want to run a function but still don't want to interrupt the whole process. Like here, when we take the object out of frame, it stops the camera momentarily, like it resets the camera momentarily. We use training, and in that we send email to the camera so that it doesn't freeze for sending email .
